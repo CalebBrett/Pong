@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="UTF-8">
+		<title>Pong</title>
+	</head>
+
+	<body>
+
+		<script>
+
+		var WIDTH=800, HEIGHT=500, pi=Math.pi;
+		var S = 83, W=87 , UpArrow=38, DownArrow = 40, one = 49, two = 50 , P = 80;
+		var canvas, ctx, keystate, scoreboard;
+		var player, player2, ai, ball;
+		var p2 = false;
+		var p1score = 0;
+		var p2score = 0;
+		var paused = false;
+		var pausing = false;
+
+
+
+		var medboop = new Audio("medboop.wav");
+		var hiboop = new Audio("hiboop.wav");
+		var lowboop = new Audio("lowboop.wav");
+		var wall1 = new Audio("wall.wav");
+		var wall2 = new Audio("wall2.wav");
+		var wall3 = new Audio("wall3.wav");
+		var boopnum = 0;
+		var randcolor = Math.floor((Math.random() * 10) + 1);
+
+
+		player = 
+		{
+			x: null,
+			y:null,
+			width: 20,
+			height: 100,
+
+			update: function()
+			{
+				if(keystate[W]) this.y -= 7;
+				if(keystate[S]) this.y += 7;
+				if(keystate[two]){
+				p2 = true; 
+				p1score = 0; 
+				p2score = 0;
+				}
+
+				if(keystate[one]){
+				p2 = false; 
+				p1score = 0; 
+				p2score = 0;
+				}
+
+				if(this.y < 0)
+				{
+					this.y += 7;
+				}
+				if(this.y  + this.height > HEIGHT)
+				{
+					this.y -= 7;
+				}
+			},
+			draw: function()
+			{
+				ctx.fillRect(this.x, this.y, this.width, this.height)
+			}
+		};
+
+		player2 = 
+		{
+			x: null,
+			y: null,
+			width: 20,
+			height: 100,
+
+			update: function()
+			{
+				if(keystate[UpArrow]) this.y -= 7;
+				if(keystate[DownArrow]) this.y += 7;
+
+				if(this.y < 0)
+				{
+					this.y += 7;
+				}
+				if(this.y  + this.height > HEIGHT)
+				{
+					this.y -= 7;
+				}
+			},
+			draw: function()
+			{
+				ctx.fillRect(this.x, this.y, this.width, this.height)
+			}
+		};
+
+		ai = 
+		{
+			x: null,
+			y: null,
+			width: 20,
+			height: 100,
+
+			update: function()
+			{
+				if(p2 == true)
+				{
+					this.y = player2.y;
+				}
+				else this.y = ball.y - this.height /2;
+
+				if(this.y < 0)
+				{
+					this.y += 7;
+				}
+				if(this.y  + this.height > HEIGHT)
+				{
+					this.y -= 7;
+				}
+			},
+			draw: function()
+			{
+				ctx.fillRect(this.x, this.y, this.width, this.height)
+			}
+		};
+
+		ball = 
+		{
+			x: null,
+			y: null,
+			vel: null,
+			side: 20,
+			speedx: 15,
+			speedy: 6,
+
+			update: function()
+			{
+				this.x += this.vel.x;
+				this.y += this.vel.y;
+
+				if(0 > this.y || this.y+this.side > HEIGHT)					//top and bottom
+				{
+					this.vel.y *= -1;
+					if(randcolor > 7)
+					{
+						wall1.play();
+					}
+					if(randcolor < 7 && randcolor > 4)
+					{
+						wall2.play();
+					}
+					if(randcolor < 4)
+					{
+						wall3.play();
+					}
+				}
+
+				if(0 > this.x)    											//player2 / ai    goal
+				{
+					this.x = player.x + player.width;
+					this.y = player.y + player.height /2;
+					this.vel.x *= -1;
+					p2score += 1;
+				}
+				if(this.x+this.side > WIDTH && p2 == true)					//player1 goal on player2
+				{
+					this.x = player2.x - player2.width;
+					this.y = player2.y + player2.height /2;
+					this.vel.x *= -1;
+					p1score += 1;
+				}
+				if(this.x+this.side > WIDTH && p2 == false)					//player1 goal on ai
+				{
+					this.x = ai.x - ai.width;
+					this.y = ai.y + ai.height /2;
+					this.vel.x *= -1;
+					p1score += 1;
+				}
+
+				if(this.x < player.x + player.width && this.y > player.y && this.y < player.y + player.height)    //player1 and ball colition
+				{
+					this.vel.x *= -1;
+
+					if(boopnum == 0)
+					{
+						medboop.play();
+						boopnum++;
+					}
+					else if(boopnum == 1)
+					{
+						hiboop.play();
+						boopnum++;
+					}
+					else if(boopnum == 2)
+					{
+						lowboop.play();
+						boopnum = 0;
+					}
+					randcolor = Math.floor((Math.random() * 10) + 1);
+
+				}
+				if(this.x > ai.x - ai.width && this.y > ai.y && this.y < ai.y + ai.height)  				//player2 and ai ball colitions
+				{
+					this.vel.x *= -1;
+					
+					if(boopnum == 0)
+					{
+						medboop.play();
+						boopnum++;
+					}
+					else if(boopnum == 1)
+					{
+						hiboop.play();
+						boopnum++;
+					}
+					else if(boopnum == 2)
+					{
+						lowboop.play();
+						boopnum = 0;
+					}
+					randcolor = Math.floor((Math.random() * 10) + 1);
+
+				}
+
+
+
+
+
+				if(this.x > WIDTH /2 - 2 && this.x < WIDTH /2 + 2)
+				{
+					
+				}
+
+			},
+			draw: function()
+			{
+				ctx.fillRect(this.x, this.y, this.side, this.side)
+			}
+		};
+
+
+		function main()
+		{
+			canvas = document.createElement("canvas");
+			canvas.width = WIDTH;
+			canvas.height = HEIGHT;
+			ctx = canvas.getContext("2d");
+			scoreboard = canvas.getContext("2d");
+			document.body.appendChild(canvas);
+
+			keystate = {};
+			document.addEventListener("keydown", function(evt)
+			{
+				keystate[evt.keyCode] = true;
+			});
+
+			document.addEventListener("keyup", function(evt)
+			{
+				delete keystate[evt.keyCode];
+			});
+
+			init();
+
+			var loop = function()
+			{
+				
+				update();
+				draw();
+				window.requestAnimationFrame(loop, canvas);
+			};
+			window.requestAnimationFrame(loop, canvas);
+		}
+
+		function init()
+		{
+
+			player.x = player.width;
+			player.y = (HEIGHT - player.height)/2;
+
+			player2.x = WIDTH - (player.width + player2.width);
+			player2.y = (HEIGHT - player2.height)/2;
+
+			ai.x = WIDTH - (player.width + ai.width);
+			ai.y = (HEIGHT - ai.height)/2;
+
+			ball.x = (WIDTH - ball.side)/2;
+			ball.y = (HEIGHT - ball.side)/2;
+
+			ball.vel = 
+			{
+				x: ball.speedx,
+				y: ball.speedy,
+			} 
+		}
+
+		function update()
+		{
+				if(keystate[P] && pausing) pausing = false;
+
+    			if (keystate[P]) 
+    			{
+	            	if (pausing == false) 
+	            	{
+	                	paused = (paused) ? false : true;
+	                	pausing = true;
+        			};
+    			};
+
+        		if (paused) return;
+
+
+				player.update();
+				player2.update();
+				ai.update();
+				ball.update();
+
+
+		}
+
+		function draw()
+		{
+
+
+			ctx.fillRect(0, 0, WIDTH, HEIGHT)
+
+
+			if(boopnum == 0 && randcolor < 5)
+			{
+				ctx.fillStyle = "#0000FF";
+			}
+			if(boopnum == 0 && randcolor > 4)
+			{
+				ctx.fillStyle = "purple";
+			}
+			if(boopnum == 1)
+			{
+				ctx.fillStyle = "#FF0000";
+			}
+			if(boopnum == 2)
+			{
+				ctx.fillStyle = "#00FF00";
+			}
+
+			ctx.save();
+
+			ctx.fillStyle = "black";
+
+
+			scoreboard.font = '10pt Calibri';
+			scoreboard.fillText("PLayer 1", WIDTH /2 - 60, 20);
+			scoreboard.fillText("PLayer 2", WIDTH /2 + 15, 20);
+
+			scoreboard.font = '30pt Calibri';
+			scoreboard.fillText("" + p1score, WIDTH /2 - 50, 50);
+			scoreboard.fillText("" + p2score, WIDTH /2 + 25, 50);
+
+			player.draw();
+			if(p2 == true)player2.draw();
+			if(p2 != true)ai.draw();
+
+			ball.draw();	
+
+			var w = 4;
+			var x = (WIDTH - w)*0.5;
+			var y = 0;
+			var step = HEIGHT/15;
+			while(y < HEIGHT)
+			{
+				ctx.fillRect(x, y+step*0.25, w, step*0.5);
+				y += step;
+			}
+
+
+			ctx.restore();
+		}
+
+
+		main();
+		</script>
+
+	</body>
+
+</html>
